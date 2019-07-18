@@ -30,8 +30,9 @@ class MyPanel(bpy.types.Panel):
         layout.prop(context.scene, "az_create_gear_operator_n")
         layout.prop(context.scene, "az_create_gear_operator_h")
         layout.prop(context.scene, "az_create_gear_operator_w")
+        layout.prop(context.scene, "az_create_gear_operator_con")
 
-def createGear(n,h,w) :
+def createGear(n,h,w,con) :
         a1=math.radians(360)/n
         l2=h*tan(math.radians(30))
         r1=l2/sin(a1/2)
@@ -42,7 +43,16 @@ def createGear(n,h,w) :
         pa2=Vector((r2-h/10,-h/20,0))
         pb=Vector((r1*cos(a1/2),r1*sin(a1/2),0))
         pc=Vector((r1*cos(a1/2),-r1*sin(a1/2),0))
-        pw=Vector((0,0,w))
+        if con :
+            rm=(r1+r2)/2
+            pw1=Vector((-r1,0,rm))/rm*w
+            pw2=Vector((-r2,0,rm))/rm*w
+            pw1=Matrix.Rotation(a1/2,3,"Z")*pw1
+            pwc=Vector((0,0,-rm))
+        else :
+            pw1=Vector((0,0,w))
+            pw2=Vector((0,0,w))
+            pwc=Vector((0,0,0))
 
         vl=[]
         fl=[]
@@ -51,8 +61,17 @@ def createGear(n,h,w) :
         for i in range(0,n):
             a=a1*i
             m=Matrix.Rotation(a,3,"Z")
+            if con :
+                pw1a=m*pw1
+                pw2a=m*pw2
+            else :
+                pw1a=pw1
+                pw2a=pw2
+
             vi=len(vl)
-            vl1=[m*pa2,m*pa,m*pa1,m*pb, m*pa2+pw,m*pa+pw,m*pa1+pw,m*pb+pw]
+            vl1=[m*pa2,m*pa,m*pa1,m*pb, m*pa2+pw2a,m*pa+pw2a,m*pa1+pw2a,m*pb+pw1a]
+            if con :
+                for vl1i in vl1: vl1i+=pwc
             fl1=[ [0,1,5,4],[1,2,6,5], [2,3,7,6],[3,8,12,7] ]
             for j in range(0,len(fl1)) :
                 fl1[j][0]+=vi
@@ -95,7 +114,8 @@ class CreateGearOperator(bpy.types.Operator):
         n=scene.az_create_gear_operator_n
         h=scene.az_create_gear_operator_h
         w=scene.az_create_gear_operator_w
-        mesh=createGear(n,h,w)
+        con=scene.az_create_gear_operator_con
+        mesh=createGear(n,h,w,con)
 
         ob_new = bpy.data.objects.new("gear", mesh)
         scene.objects.link(ob_new)
@@ -105,14 +125,16 @@ class CreateGearOperator(bpy.types.Operator):
 def register():
     bpy.utils.register_module(__name__)
     bpy.types.Scene.az_create_gear_operator_n = bpy.props.IntProperty(name="Nt",description="Количество зубьев",default=15)
-    bpy.types.Scene.az_create_gear_operator_h = bpy.props.IntProperty(name="Ht",description="Высота зубьев",default=5)
-    bpy.types.Scene.az_create_gear_operator_w = bpy.props.IntProperty(name="W",description="Толщина шестерни",default=6)
+    bpy.types.Scene.az_create_gear_operator_h = bpy.props.FloatProperty(name="Ht",description="Высота зубьев",default=5)
+    bpy.types.Scene.az_create_gear_operator_w = bpy.props.FloatProperty(name="W",description="Толщина шестерни",default=6)
+    bpy.types.Scene.az_create_gear_operator_con = bpy.props.BoolProperty(name="C",description="Коническая",default=False)
 
 def unregister():
     bpy.utils.register_module(__name__)
     del bpy.types.Scene.az_create_gear_operator_n
     del bpy.types.Scene.az_create_gear_operator_h
     del bpy.types.Scene.az_create_gear_operator_w
+    del bpy.types.Scene.az_create_gear_operator_con
     
 if __name__ == "__main__":
     register()
