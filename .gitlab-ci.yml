@@ -1,0 +1,21 @@
+# * Image
+image: docker:git
+
+stages:
+  - build
+  - test
+
+build-code-job:
+  stage: build
+  script:
+    - echo "build step"
+
+test-code-job1:
+  stage: test
+  script:
+    - echo "test job 1"
+
+test-code-job2:
+  stage: test
+  script:
+    - echo "test job 2"
